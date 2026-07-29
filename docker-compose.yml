@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: hydrocore-postgres
+    environment:
+      POSTGRES_USER: hydro_user
+      POSTGRES_PASSWORD: hydro_password
+      POSTGRES_DB: hydrocore
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/init:/docker-entrypoint-initdb.d
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: hydrocore-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  backend:
+    build: ./backend
+    container_name: hydrocore-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - mosquitto
