@@ -1,32 +1,92 @@
-version: '3.8'
+name: hydrocore-os
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: hydrocore-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: hydro_user
-      POSTGRES_PASSWORD: hydro_password
-      POSTGRES_DB: hydrocore
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - ./database/init:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - hydrocore-net
 
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: hydrocore-mosquitto
+    restart: unless-stopped
     ports:
       - "1883:1883"
-      - "9001:9001"
     volumes:
-      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./infra/docker/mosquitto:/mosquitto/config:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - hydrocore-net
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: development
     container_name: hydrocore-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      MQTT_HOST: mosquitto
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend/app:/app/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    networks:
+      - hydrocore-net
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: hydrocore-frontend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - backend
+    networks:
+      - hydrocore-net
+
+  adminer:
+    image: adminer:latest
+    container_name: hydrocore-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
     depends_on:
       - postgres
-      - mosquitto
+    networks:
+      - hydrocore-net
+
+networks:
+  hydrocore-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mosquitto_data:
+  mosquitto_log:
