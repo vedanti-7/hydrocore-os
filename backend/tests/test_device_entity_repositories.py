@@ -8,6 +8,8 @@ work together, not just that Python compiles.
 
     docker compose exec backend pytest tests/test_device_entity_repositories.py -v
 """
+from uuid import uuid4
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +30,10 @@ from app.infrastructure.database.session import async_session_factory
 
 @pytest.mark.asyncio
 async def test_full_hierarchy_round_trip():
+    # mqtt_client_id and unique_id are UNIQUE and this test writes to the
+    # shared dev database without cleaning up, so both must be fresh per run.
+    client_id = f"env-monitor-{uuid4().hex[:12]}"
+
     async with async_session_factory() as session:  # type: AsyncSession
         site_repo = SqlAlchemySiteRepository(session)
         gh_repo = SqlAlchemyGreenhouseRepository(session)
@@ -43,7 +49,7 @@ async def test_full_hierarchy_round_trip():
         device = await device_repo.create(
             Device(
                 greenhouse_id=greenhouse.id, name="Env Monitor 1",
-                device_type=DeviceType.ENV_MONITOR, mqtt_client_id="env-monitor-01",
+                device_type=DeviceType.ENV_MONITOR, mqtt_client_id=client_id,
                 status=DeviceStatus.ONLINE,
             )
         )
@@ -53,7 +59,7 @@ async def test_full_hierarchy_round_trip():
             Entity(
                 device_id=device.id, entity_type=EntityType.SENSOR,
                 device_class=DeviceClass.TEMPERATURE,
-                unique_id="env-monitor-01/temperature", unit="°C",
+                unique_id=f"{client_id}/temperature", unit="°C",
             )
         )
         assert entity.device_id == device.id

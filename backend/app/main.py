@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health
+from app.api import devices, entities, greenhouses, health, sites
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.infrastructure.mqtt.bootstrap import start_mqtt_listener
@@ -50,6 +50,10 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
+    app.include_router(sites.router)
+    app.include_router(greenhouses.router)
+    app.include_router(devices.router)
+    app.include_router(entities.router)
 
     return app
 

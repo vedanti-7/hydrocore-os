@@ -58,4 +58,4 @@ def run_async_migrations() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_async_migrations
+    run_async_migrations()

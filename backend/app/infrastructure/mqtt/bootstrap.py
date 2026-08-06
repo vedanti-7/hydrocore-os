@@ -3,6 +3,7 @@ import logging
 import aiomqtt
 from app.core.config import get_settings
 from app.infrastructure.mqtt.consumer import handle_mqtt_message
+from app.infrastructure.mqtt.topics import TELEMETRY_TOPIC_FILTER
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,8 @@ async def start_mqtt_listener():
                 username=username,
                 password=password,
             ) as client:
-                logger.info("Connected to MQTT broker. Subscribing to hydrocore/#...")
-                await client.subscribe("hydrocore/#")
+                logger.info(f"Connected to MQTT broker. Subscribing to {TELEMETRY_TOPIC_FILTER}...")
+                await client.subscribe(TELEMETRY_TOPIC_FILTER)
                 
                 async for message in client.messages:
                     raw_payload = message.payload

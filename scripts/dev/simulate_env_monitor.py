@@ -21,7 +21,11 @@ except Exception as e:
 
 client.loop_start()
 
-topic = "hydrocore/greenhouse-01/gh-a/env-monitor-01/telemetry"
+# Must match a provisioned devices.mqtt_client_id — ingestion resolves the
+# device by this value alone and drops telemetry from unknown identities.
+MQTT_CLIENT_ID = "env-monitor-dev-01"
+
+topic = f"hydrocore/greenhouse-01/gh-a/{MQTT_CLIENT_ID}/telemetry"
 
 print(f"Simulator started! Publishing telemetry every 5 seconds to topic:\n -> {topic}\n")
 
