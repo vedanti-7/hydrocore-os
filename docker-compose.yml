@@ -20,19 +20,6 @@ services:
     networks:
       - hydrocore-net
 
-  mosquitto:
-    image: eclipse-mosquitto:2
-    container_name: hydrocore-mosquitto
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-    volumes:
-      - ./infra/docker/mosquitto:/mosquitto/config:ro
-      - mosquitto_data:/mosquitto/data
-      - mosquitto_log:/mosquitto/log
-    networks:
-      - hydrocore-net
-
   backend:
     build:
       context: ./backend
@@ -42,7 +29,6 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: postgres
-      MQTT_HOST: mosquitto
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
@@ -51,8 +37,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mosquitto:
-        condition: service_started
     networks:
       - hydrocore-net
 
@@ -89,5 +73,3 @@ networks:
 
 volumes:
   postgres_data:
-  mosquitto_data:
-  mosquitto_log:

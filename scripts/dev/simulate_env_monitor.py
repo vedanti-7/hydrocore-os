@@ -1,18 +1,19 @@
 import json
+import os
 import random
 import time
 import paho.mqtt.client as mqtt
 
-BROKER = "localhost"
-PORT = 1883
-USER = "hydrocore_backend"
-PASSWORD = "changeme_in_prod"
+BROKER = os.environ.get("MQTT_BROKER_HOST", "localhost")
+PORT = int(os.environ.get("MQTT_BROKER_PORT", "1883"))
+USER = os.environ.get("MQTT_USERNAME", "hydrocore_backend")
+PASSWORD = os.environ.get("MQTT_PASSWORD", "changeme_in_prod")
 
 # Compatible with paho-mqtt 2.x
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.username_pw_set(USER, PASSWORD)
 
-print("Connecting to local Mosquitto broker...")
+print(f"Connecting to Mosquitto broker at {BROKER}:{PORT}...") 
 try:
     client.connect(BROKER, PORT, 60)
 except Exception as e:
